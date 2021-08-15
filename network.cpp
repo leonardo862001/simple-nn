@@ -1,6 +1,6 @@
 #include <Eigen/Core>
 
-#include "minst-loader.hpp"
+#include "mnist-loader.hpp"
 using namespace Eigen;
 
 VectorXd sigmoid(VectorXd x) { return 1 / (1 + ((-x).array()).exp()); }

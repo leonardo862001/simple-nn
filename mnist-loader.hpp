@@ -3,8 +3,8 @@
 #include <iostream>
 #include <Eigen/Core>
 #include <tuple>
-const std::string training_image_fn = "mnist/train-images.idx3-ubyte";
-const std::string training_label_fn = "mnist/train-labels.idx1-ubyte";
+const std::string training_image_fn = "../mnist/train-images.idx3-ubyte";
+const std::string training_label_fn = "../mnist/train-labels.idx1-ubyte";
 std::ifstream image;
 std::ifstream label;
 
