@@ -10,7 +10,7 @@ VectorXd dsigmoid(VectorXd x) { return sigmoid(x).array()*(1-sigmoid(x).array())
 VectorXd ReLU(VectorXd x) { auto f = [](double k)->double{ return k<0?0:k; }; return x.unaryExpr(f); }
 VectorXd dReLU(VectorXd x) { auto f = [](double k)->double{ return k<=0?0:1; }; return x.unaryExpr(f); }
 VectorXd htangent(VectorXd x) { return x.array().tanh(); }
-VectorXd dhtangent(VectorXd x) { return 1-x.array().tanh().square(); }
+VectorXd dhtangent(VectorXd x) { return 1-((x.array().tanh()).square()); }
 auto activation = sigmoid;
 auto dactivation = dsigmoid;
 class network {
@@ -62,7 +62,7 @@ class trainer {
 		for( auto i : _net.a ){
 			delta.push_back(VectorXd::Zero(i.rows()));
 		}
-		delta.back() = dactivation(_net.a.back()).array() * (activation(_net.a.back())-expected).array();
+		delta.back() = (dactivation(_net.a.back()).array() * (activation(_net.a.back())-expected).array());
 		v.back() = mu*v.back()- eta*delta.back()*activation(_net.a[delta.size()-2]).transpose();
 		_net.w.back() += v.back();
 		_net.b.back() -= eta*delta.back();
@@ -74,7 +74,7 @@ class trainer {
 		}
 	}
 	void learn(){
-		for(int i = 0; i < 500; i++){
+		for(int i = 0; i < 600; i++){
 			std::cout << "Batch: " << i << std::endl;
 			for(int j=0; j < 100; j++){
 				std::cout << "Sample: " << j << std::endl;
@@ -86,6 +86,7 @@ class trainer {
 		}
 	}
 	void test(){
+		mnist_test_init();
 		std::cout << "testing: " << std::endl;
 		double ok = 0.0;
 		for(int i = 0; i < 10000; i++){
@@ -106,14 +107,15 @@ class trainer {
 		std::cout << "Accuracy: " << ok/10000 *100<< "%" << std::endl;
 	}
 	network& _net;
-	const double eta = 0.065;
-	const double mu = 0.78;
+	const double eta = 0.015;
+	const double mu = 0.85;
+	const double lambda = 0.005;
 	MatrixXd delta1, delta2;
 	std::vector<MatrixXd> v;
 };
 
 int main(){
-	network nn({784, 16, 16, 10});
+	network nn({784, 128, 10, 10});
 	trainer tr(nn);
 	tr.learn();
 	tr.test();

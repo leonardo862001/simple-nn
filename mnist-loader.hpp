@@ -5,6 +5,8 @@
 #include <tuple>
 const std::string training_image_fn = "../mnist/train-images.idx3-ubyte";
 const std::string training_label_fn = "../mnist/train-labels.idx1-ubyte";
+const std::string test_image_fn = "../mnist/t10k-images.idx3-ubyte";
+const std::string test_label_fn = "../mnist/t10k-labels.idx1-ubyte";
 std::ifstream image;
 std::ifstream label;
 
@@ -52,6 +54,19 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> get_image(){
 	std::cout << "label: " << (int) number << std::endl;
 	std::tuple<Eigen::VectorXd, Eigen::VectorXd> res = std::make_tuple(data, expected);
 	return res;
+}
+void mnist_test_init(){
+	image.close();
+	label.close();
+	image.open(test_image_fn.c_str(), std::ios::in | std::ios::binary);
+	label.open(test_label_fn.c_str(), std::ios::in | std::ios::binary);
+		char number;
+		for (int i = 1; i <= 16; ++i) {
+			image.read(&number, sizeof(char));
+		}
+		for (int i = 1; i <= 8; ++i) {
+			label.read(&number, sizeof(char));
+		}
 }
 void close_minst(){
 	image.close();
