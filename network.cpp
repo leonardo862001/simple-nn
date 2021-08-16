@@ -43,20 +43,13 @@ class trainer {
        public:
 	trainer(network& net) : _net(net) {
 		init_minst();
-		for( auto i : _net.w )
+		for( auto i : _net.w ){
 			v.push_back(MatrixXd::Zero(i.rows(), i.cols()));
+			dw.push_back(MatrixXd::Zero(i.rows(), i.cols()));
+			db.push_back(VectorXd::Zero(i.rows()));
+		}
 	}
 	~trainer() { close_minst(); }
-	float cost(VectorXd y, VectorXd expected) {
-		return 0.5 * (expected - y).squaredNorm();
-	}
-	float batch_cost(int batch_size, VectorXd* inputs, VectorXd* outputs) {
-		float e = 0;
-		for (int i = 0; i < batch_size; i++) {
-			e += cost(outputs[i], inputs[i]);
-		}
-		return e / batch_size;
-	}
 	void backpropagation(VectorXd expected, VectorXd input) {
 		std::vector<VectorXd> delta;
 		for( auto i : _net.a ){
@@ -64,24 +57,35 @@ class trainer {
 		}
 		delta.back() = (dactivation(_net.a.back()).array() * (activation(_net.a.back())-expected).array());
 		v.back() = mu*v.back()- eta*delta.back()*activation(_net.a[delta.size()-2]).transpose();
-		_net.w.back() += v.back();
-		_net.b.back() -= eta*delta.back();
+		//_net.w.back() *= 1-eta*lambda;
+		dw.back() += v.back();
+		db.back() -= eta*delta.back();
 		for(int i = delta.size()-2; i > 0; i--){
 			delta[i] = (_net.w[i+1].transpose()*delta[i+1]).array()*dactivation(_net.a[i]).array();
 			v[i] =mu*v[i] - eta*delta[i]*activation(_net.a[i-1]).transpose();
-			_net.w[i] += v[i];
-			_net.b[i] -= eta*delta[i];
+			//_net.w[i] *= 1-eta*lambda;
+			dw[i] += v[i];
+			db[i] -= eta*delta[i];
 		}
 	}
 	void learn(){
-		for(int i = 0; i < 600; i++){
+		for(int i = 0; i < 60000/batch_size; i++){
+			for(int k = 1; k < _net.w.size(); k++){
+				dw[k] = MatrixXd::Zero(_net.w[k].rows(), _net.w[k].cols());
+				db[k] = VectorXd::Zero(_net.b[k].rows());
+			}
 			std::cout << "Batch: " << i << std::endl;
-			for(int j=0; j < 100; j++){
+			for(int j=0; j < batch_size; j++){
 				std::cout << "Sample: " << j << std::endl;
 				auto im = get_image();
 				VectorXd y = _net.feedforward(std::get<0>(im));
 				std::cout << y.transpose() << std::endl;
 				backpropagation(std::get<1>(im),std::get<0>(im));
+			}
+			for(int k = 1; k < _net.w.size(); k++){
+				_net.w[k] *= 1-eta*lambda/batch_size;
+				_net.w[k] += dw[k]/batch_size;
+				_net.b[k] += db[k]/batch_size;
 			}
 		}
 	}
@@ -107,15 +111,18 @@ class trainer {
 		std::cout << "Accuracy: " << ok/10000 *100<< "%" << std::endl;
 	}
 	network& _net;
-	const double eta = 0.015;
-	const double mu = 0.85;
-	const double lambda = 0.005;
+	const double eta = 0.42;
+	const double mu = 0.78;
+	const double lambda = 0.0015;
+	const int batch_size = 5;
+	std::vector<MatrixXd> dw;
+	std::vector<VectorXd> db;
 	MatrixXd delta1, delta2;
 	std::vector<MatrixXd> v;
 };
 
 int main(){
-	network nn({784, 128, 10, 10});
+	network nn({784, 50, 15, 10});
 	trainer tr(nn);
 	tr.learn();
 	tr.test();
