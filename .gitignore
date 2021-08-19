@@ -1,4 +1,6 @@
 a.out
-*.pgm
 *.dat
+train
+draw
+test
 
