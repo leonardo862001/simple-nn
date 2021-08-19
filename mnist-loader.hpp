@@ -17,7 +17,7 @@ void print_image(Eigen::VectorXd im){
 	}
 }
 
-void init_minst() {
+void init_mnist() {
 	image.open(training_image_fn.c_str(), std::ios::in | std::ios::binary);
 	label.open(training_label_fn.c_str(), std::ios::in | std::ios::binary);
 		char number;
@@ -68,7 +68,7 @@ void mnist_test_init(){
 			label.read(&number, sizeof(char));
 		}
 }
-void close_minst(){
+void close_mnist(){
 	image.close();
 	label.close();
 }
