@@ -13,12 +13,17 @@ class trainer {
 		}
 	}
 	~trainer() { close_mnist(); }
-	void backpropagation(VectorXd expected, VectorXd input) {
+	void backpropagation(VectorXd expected) {
 		std::vector<VectorXd> delta;
 		for( auto i : _net.a ){
 			delta.push_back(VectorXd::Zero(i.rows()));
 		}
+#ifdef SOFTMAX
+		delta.back() = (dsoftmax(_net.a.back()).array() * (softmax(_net.a.back())-expected).array());
+#else
 		delta.back() = (dactivation(_net.a.back()).array() * (activation(_net.a.back())-expected).array());
+#endif
+		//delta.back() = (dsoftmax(_net.a.back()).array()) * (1-expected.array())/(1-softmax(_net.a.back()).array())-(expected.array())/(softmax(_net.a.back()).array());
 		v.back() = mu*v.back()- eta*delta.back()*activation(_net.a[delta.size()-2]).transpose();
 		//_net.w.back() *= 1-eta*lambda;
 		dw.back() += v.back();
@@ -43,10 +48,14 @@ class trainer {
 				auto im = get_image();
 				VectorXd y = _net.feedforward(std::get<0>(im));
 				std::cout << y.transpose() << std::endl;
-				backpropagation(std::get<1>(im),std::get<0>(im));
+				backpropagation(std::get<1>(im));
 			}
 			for(int k = 1; k < _net.w.size(); k++){
 				_net.w[k] *= 1-eta*lambda/batch_size;
+#ifdef clipping
+				if(dw[k].norm() > threshold) dw[k] *= threshold/dw[k].norm();
+				if(db[k].norm() > threshold) db[k] *= threshold/dw[k].norm();
+#endif
 				_net.w[k] += dw[k]/batch_size;
 				_net.b[k] += db[k]/batch_size;
 			}
@@ -74,10 +83,11 @@ class trainer {
 		std::cout << "Accuracy: " << ok/10000 *100<< "%" << std::endl;
 	}
 	network& _net;
-	const double eta = 0.42;
-	const double mu = 0.78;
-	const double lambda = 0.0015;
-	const int batch_size = 5;
+	double eta = 0.42;
+	double mu = 0.78;
+	double lambda = 0.0015;
+	double threshold = 0.1;
+	int batch_size = 5;
 	std::vector<MatrixXd> dw;
 	std::vector<VectorXd> db;
 	MatrixXd delta1, delta2;

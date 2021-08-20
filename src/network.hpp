@@ -6,13 +6,18 @@
 
 #include "mnist-loader.hpp"
 using namespace Eigen;
-
+constexpr double alfa = 1.67326324;
+constexpr double l = 1.05070098;
 VectorXd sigmoid(VectorXd x) { return 1 / (1 + ((-x).array()).exp()); }
 VectorXd dsigmoid(VectorXd x) { return sigmoid(x).array()*(1-sigmoid(x).array()); }
-VectorXd ReLU(VectorXd x) { auto f = [](double k)->double{ return k<0?0:k; }; return x.unaryExpr(f); }
-VectorXd dReLU(VectorXd x) { auto f = [](double k)->double{ return k<=0?0:1; }; return x.unaryExpr(f); }
+VectorXd ReLU(VectorXd x) { auto f = [](double k)->double{ return k<0?0.1*k:k; }; return x.unaryExpr(f); }
+VectorXd dReLU(VectorXd x) { auto f = [](double k)->double{ return k<0?0.1:1; }; return x.unaryExpr(f); }
+VectorXd SeLU(VectorXd x) { auto f = [](double k)->double{ return k<=0?alfa*std::exp(k-1):k; }; return l*x.unaryExpr(f); }
+VectorXd dSeLU(VectorXd x) { auto f = [](double k)->double{ return k<=0?alfa*std::exp(k):1; }; return l*x.unaryExpr(f); }
 VectorXd htangent(VectorXd x) { return x.array().tanh(); }
 VectorXd dhtangent(VectorXd x) { return 1-((x.array().tanh()).square()); }
+VectorXd softmax(VectorXd x) { double scale = x.array().exp().sum(); return x.array().exp()/scale; }
+VectorXd dsoftmax(VectorXd x) { double sum = x.array().exp().sum(); VectorXd t = sum-x.array().exp(); return (t.array()*x.array().exp())/(sum*sum); }
 auto activation = sigmoid;
 auto dactivation = dsigmoid;
 class network {
@@ -35,7 +40,11 @@ class network {
 		for(i = 1; i < a.size()-1; i++){
 			a[i+1] = w[i+1] * activation(a[i])+b[i+1];
 		}
-		return activation(a[i]);
+#ifdef SOFTMAX
+		return softmax(a[i]);
+#else
+		return sigmoid(a[i]);
+#endif
 	}
 	void dump(){
 		std::ofstream file;
