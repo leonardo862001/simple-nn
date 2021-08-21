@@ -1,7 +1,7 @@
 #include<iostream>
 #include<fstream>
 #include<Eigen/Core>
-#include "network.hpp"
+#include "include/network.hpp"
 using namespace Eigen;
 
 int main(int argc, char** argv){

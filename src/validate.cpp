@@ -1,5 +1,5 @@
-#include "network.hpp"
-#include "trainer.hpp"
+#include "include/network.hpp"
+#include "include/trainer.hpp"
 int main(){
 	network nn;
 	nn.load();

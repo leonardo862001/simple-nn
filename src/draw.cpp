@@ -4,20 +4,25 @@
 #include <iostream>
 #include <fstream>
 
-#include "network.hpp"
-#include "trainer.hpp"
+#include "include/network.hpp"
+#include "include/trainer.hpp"
+#include "include/convolution.hpp"
+#include "include/gaussian.hpp"
 #define WIDTH 224
 #define HEIGHT 224
 #define BRUSH 5
 
-MatrixXd reduce(MatrixXd x){
+MatrixXd reduce(MatrixXd x, int pass){
   Matrix3d kernel;
+  /*
   kernel << 1,2,1,
          2,4,2,
          1,2,1;
   kernel/=16;
+  */
   MatrixXd ret = MatrixXd::Zero(x.rows()/2, x.cols()/2);
   MatrixXd temp = MatrixXd::Zero(x.rows(), x.cols());
+  /*
   for(int i = 1; i < x.rows() - 1; i++){
     for(int j = 1; j < x.cols() - 1; j++){
       for(int k = -1; k <= 1; k++){
@@ -27,10 +32,12 @@ MatrixXd reduce(MatrixXd x){
       }
     }
   }
+  */
+  kernel = FilterCreation(pass+1, 3);
+  temp = conv2d(x, kernel);
   for(int i = 0; i < x.rows()/2; i++){
     for(int j = 0; j < x.cols()/2; j++){
-      ret(i,j)=temp(2*i+1,2*j+1)+temp(2*i+1,2*j)+temp(2*i,2*j+1)+temp(2*i,2*j);
-      ret(i,j)/=4;
+      ret(i,j)=temp(2*i,2*j);
     }
   }
   return ret;
@@ -122,7 +129,7 @@ int main(int argc, char** argv) {
             file.close();
 #endif
             for(int i = 0; i < 3; i++){
-              t = reduce(temp);
+              t = reduce(temp, i);
               temp.resize(temp.rows()/2, temp.cols()/2);
               temp = t;
               t.resize(t.rows()/2, t.cols()/2);
